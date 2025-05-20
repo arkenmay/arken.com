@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Moteur de recherche intelligent</title>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #dbeafe, #eff6ff);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding-top: 50px;
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 700px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 26px;
+      color: #222;
+      margin-bottom: 25px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      transition: 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: #3b82f6;
+      outline: none;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 25px;
+    }
+
+    li {
+      background: #f1f5f9;
+      margin-bottom: 12px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    li:hover {
+      background-color: #e0f2fe;
+      transform: translateX(5px);
+    }
+
+    a {
+      text-decoration: none;
+      color: #2563eb;
+      font-weight: 500;
+      font-size: 16px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      input[type="text"] {
+        font-size: 16px;
+        padding: 12px;
+      }
+
+      a {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Moteur de recherche (tolère les fautes)</h1>
+    <input type="text" id="searchInput" placeholder="Recherche sur roki 😉">
+    <ul id="results"></ul>
+  </div>
+
+  <script>
+    const sites = [
+      { name: "Google", url: "https://www.google.com" },
+      { name: "Facebook", url: "https://www.facebook.com" },
+      { name: "YouTube", url: "https://www.youtube.com" },
+      { name: "Wikipedia", url: "https://www.wikipedia.org" },
+      { name: "Amazon", url: "https://www.amazon.com" },
+      { name: "Twitter", url: "https://www.twitter.com" },
+      { name: "Instagram", url: "https://www.instagram.com" },
+      { name: "LinkedIn", url: "https://www.linkedin.com" },
+      { name: "Netflix", url: "https://www.netflix.com" },
+      { name: "Reddit", url: "https://www.reddit.com" },
+      { name: "TikTok", url: "https://www.tiktok.com" },
+      { name: "Pinterest", url: "https://www.pinterest.com" },
+      { name: "Bing", url: "https://www.bing.com" },
+      { name: "Yahoo", url: "https://www.yahoo.com" },
+      { name: "eBay", url: "https://www.ebay.com" },
+      { name: "Twitch", url: "https://www.twitch.tv" },
+      { name: "Stack Overflow", url: "https://stackoverflow.com" },
+      { name: "GitHub", url: "https://github.com" },
+      { name: "Coursera", url: "https://www.coursera.org" },
+      { name: "Minecraft", url: "https://www.minecraft.net" },
+      { name: "Poki", url: "https://poki.com/fr" },
+      { name: "Geometry Dash Lite", url: "https://geometrydashlite.io/geometry-dash-lite" },
+      { name: "W3Schools", url: "https://www.w3schools.com" },
+      { name: "Scratch", url: "https://scratch.mit.edu" },
+      { name: "VS Code en ligne", url: "https://vscode.dev" },
+      { name: "Udemy", url: "https://www.udemy.com" },
+      { name: "Airbnb", url: "https://www.airbnb.com" },
+      { name: "Booking", url: "https://www.booking.com" },
+      { name: "Le Bon Coin", url: "https://www.leboncoin.fr" },
+      { name: "Canva", url: "https://www.canva.com" },
+      { name: "Spotify", url: "https://www.spotify.com" },
+      { name: "SoundCloud", url: "https://www.soundcloud.com" },
+      { name: "Deezer", url: "https://www.deezer.com" },
+      { name: "Telegram", url: "https://www.telegram.org" },
+      { name: "WhatsApp Web", url: "https://web.whatsapp.com" },
+      { name: "ProtonMail", url: "https://mail.proton.me" },
+      { name: "Outlook", url: "https://outlook.live.com" },
+      { name: "Gmail", url: "https://mail.google.com" },
+      { name: "DuckDuckGo", url: "https://duckduckgo.com" },
+      { name: "OVH", url: "https://www.ovhcloud.com" },
+      { name: "Namecheap", url: "https://www.namecheap.com" },
+      { name: "Medium", url: "https://medium.com" },
+      { name: "Quora", url: "https://www.quora.com" },
+      { name: "Freepik", url: "https://www.freepik.com" },
+      { name: "Wix", url: "https://www.wix.com" },
+      { name: "Shopify", url: "https://www.shopify.com" },
+      { name: "OpenAI", url: "https://www.openai.com" },
+      { name: "ChatGPT", url: "https://chat.openai.com" },
+      { name: "CNN", url: "https://www.cnn.com" },
+      { name: "BBC News", url: "https://www.bbc.com/news" },
+      { name: "The Guardian", url: "https://www.theguardian.com" },
+      { name: "New York Times", url: "https://www.nytimes.com" },
+      { name: "Le Monde", url: "https://www.lemonde.fr" },
+      { name: "France 24", url: "https://www.france24.com" },
+      { name: "20 Minutes", url: "https://www.20minutes.fr" },
+      { name: "Numerama", url: "https://www.numerama.com" },
+      { name: "Les Echos", url: "https://www.lesechos.fr" },
+      { name: "TechCrunch", url: "https://techcrunch.com" }
+    ];
+
+    const fuse = new Fuse(sites, {
+      keys: ['name'],
+      threshold: 0.4,
+    });
+
+    const searchInput = document.getElementById("searchInput");
+    const resultsList = document.getElementById("results");
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value;
+      resultsList.innerHTML = "";
+
+      const results = fuse.search(query);
+
+      results.forEach(result => {
+        const { name, url } = result.item;
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="${url}" target="_blank">${name}</a>`;
+        resultsList.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
