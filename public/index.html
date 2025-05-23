@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat en ligne</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; background: #f0f0f0; display: flex; justify-content: center; }
+    #chat { width: 90%; max-width: 800px; background: white; margin-top: 40px; border-radius: 8px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 90vh; }
+    #messages { flex-grow: 1; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    #messages li { list-style: none; margin-bottom: 5px; text-align: left; }
+    #form { display: flex; }
+    #input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px 0 0 5px; }
+    #send { padding: 10px 20px; border: none; background: #007bff; color: white; border-radius: 0 5px 5px 0; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <ul id="messages"></ul>
+    <form id="form">
+      <input id="input" autocomplete="off" placeholder="Tape ton message ici..." required />
+      <button id="send">Envoyer</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let username = '';
+
+    while (!username) {
+      username = prompt("Entrez votre pseudo :");
+    }
+    socket.emit('set username', username);
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    const scrollToBottom = () => {
+      messages.scrollTop = messages.scrollHeight;
+    };
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (message) {
+        socket.emit('chat message', message);
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', function(msg) {
+      const item = document.createElement('li');
+      item.textContent = msg;
+      messages.appendChild(item);
+      scrollToBottom();
+    });
+
+    socket.on('chat history', function(history) {
+      history.forEach(msg => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+      });
+      scrollToBottom();
+    });
+  </script>
+</body>
+</html>
